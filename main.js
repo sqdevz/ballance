@@ -1,24 +1,58 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
 
-document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
-  </div>
-`
+import * as THREE from 'three'
+import * as dat from 'lil-gui'
 
-setupCounter(document.querySelector('#counter'))
+
+const sizes = { width: window.innerWidth, height: window.innerHeight }
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+camera.position.set(3, 3, 3)
+camera.lookAt(new THREE.Vector3(0, 0, 0))
+
+const canvas = document.querySelector('canvas.webgl')
+const renderer = new THREE.WebGLRenderer({ canvas })
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.setSize(sizes.width, sizes.height)
+
+const scene = new THREE.Scene()
+
+const geometry = new THREE.BoxGeometry(1, 1, 1)
+const material = new THREE.MeshPhongMaterial({ color: 0x006699 })
+const mesh = new THREE.Mesh(geometry, material)
+mesh.position.y = 0.5
+mesh.castShadow = true
+scene.add(mesh)
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+scene.add(ambientLight)
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+directionalLight.position.set(0, 1, 1)
+directionalLight.castShdow = true
+directionalLight.shadow.mapSize.width = 1024
+directionalLight.shadow.mapSize.height = 1024
+directionalLight.shadow.radius = 5
+scene.add(directionalLight)
+
+let time = Date.now()
+const tick = () => {
+    const currentTime = Date.now()
+    const deltaTime = (currentTime - time) * 0.001
+    time = currentTime
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+tick()
+renderer.render(scene, camera)
+
+window.addEventListener('resize', () => {
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    console.log(sizes)
+})
+
