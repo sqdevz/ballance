@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+message Configuration {
+  optional string name = 1;
+  optional int32 id = 2;
+  optional string email = 3;
+}
+

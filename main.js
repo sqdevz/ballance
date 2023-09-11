@@ -3,6 +3,11 @@ import './style.css'
 import * as THREE from 'three'
 import * as dat from 'lil-gui'
 
+// config: different maps, arbitrary 3d shapes
+// ball, box, cylinder
+// player spawn (loc)
+// static/dynamic/force/lava
+// D.O.O.R.S
 
 const sizes = { width: window.innerWidth, height: window.innerHeight }
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
