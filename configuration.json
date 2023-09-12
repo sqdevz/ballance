@@ -1,8 +1,0 @@
-{
-    "playerSpawn": [0, 0, 0],
-    "objects": [
-        { "type": "dynamic", "shape": { "type": "sphere", "radius": 1.0, "position": [1, 2, 3] }}
-        { "type": "dynamic", "shape": { "type": "box", "size": [2, 2, 2], "position": [1, 2, 3], "rotation": [0, 0, 0] }},
-        { "type": "dynamic", "shape": { "type": "cylinder", "radius": 1.0, "height": 3.0 }}
-    ]
-}
