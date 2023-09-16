@@ -1,0 +1,82 @@
+{
+  "entities" : [ {
+    "type" : "Ballance$PlayerSpawn",
+    "position" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 10.0,
+        "y" : 0.5,
+        "z" : 10.0
+      }
+    },
+    "behaviour" : "static",
+    "position" : {
+      "x" : 0.0,
+      "y" : -0.5,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$CylinderShape",
+      "radius" : 0.5,
+      "halfLength" : 1.5
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : -4.0,
+      "y" : 2.5,
+      "z" : -5.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$SphereShape",
+      "radius" : 1.5
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : -3.0,
+      "y" : 2.5,
+      "z" : -2.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    }
+  } ]
+}
+
