@@ -8,6 +8,8 @@ import * as CANNON from 'cannon-es'
 import CannonUtils from './cannonUtils'
 import CannonDebugRenderer from './cannonDebugRenderer'
 
+import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
+
 // config: different maps, arbitrary 3d shapes
 // ball, box, cylinder
 // player spawn (loc)
@@ -52,13 +54,50 @@ world.gravity.set(0, -9.82, 0)
 // HACK: list of update functions
 const updaters: (() => void)[] = []
 
+var player: CANNON.Body | null = null
+
 function initializeEntity(entity) {
     switch (entity.type) {
         case 'Ballance$PlayerSpawn':
+            const radius = 1.0
+            const normalMaterial = new THREE.MeshNormalMaterial()
+            const sphereGeometry = new THREE.SphereGeometry(radius)
+            const sphereMesh = new THREE.Mesh(sphereGeometry, normalMaterial)
+            sphereMesh.position.x = entity.position.x
+            sphereMesh.position.y = entity.position.y
+            sphereMesh.position.z = entity.position.z
+            sphereMesh.castShadow = true
+            scene.add(sphereMesh)
+            const sphereShape = new CANNON.Sphere(radius)
+            const sphereBody = new CANNON.Body({ mass: 1.0 })
+            sphereBody.addShape(sphereShape)
+            sphereBody.position.x = sphereMesh.position.x
+            sphereBody.position.y = sphereMesh.position.y
+            sphereBody.position.z = sphereMesh.position.z
+            world.addBody(sphereBody)
+            updaters.push(() => {
+                sphereMesh.position.set(
+                    sphereBody.position.x,
+                    sphereBody.position.y,
+                    sphereBody.position.z,
+                )
+                sphereMesh.quaternion.set(
+                    sphereBody.quaternion.x,
+                    sphereBody.quaternion.y,
+                    sphereBody.quaternion.z,
+                    sphereBody.quaternion.w,
+                )
+            })
+            player = sphereBody
             break;
         case 'Ballance$WorldObject':
-            const normalMaterial = new THREE.MeshNormalMaterial()
             const mass = entity.behaviour === 'static' ? 0.0 : 1.0
+            const color = new THREE.Color(
+                entity.color.x,
+                entity.color.y,
+                entity.color.z,
+            )
+            const material = new THREE.MeshPhongMaterial({ color })
             switch (entity.shape.type) {
                 case 'Ballance$BoxShape':
                     const cubeGeometry = new THREE.BoxGeometry(
@@ -66,7 +105,7 @@ function initializeEntity(entity) {
                         entity.shape.halfExtents.y * 2,
                         entity.shape.halfExtents.z * 2,
                     )
-                    const cubeMesh = new THREE.Mesh(cubeGeometry, normalMaterial)
+                    const cubeMesh = new THREE.Mesh(cubeGeometry, material)
                     cubeMesh.position.x = entity.position.x
                     cubeMesh.position.y = entity.position.y
                     cubeMesh.position.z = entity.position.z
@@ -93,7 +132,11 @@ function initializeEntity(entity) {
                     )
                     world.addBody(cubeBody)
                     updaters.push(() => {
-                        cubeMesh.position.set(cubeBody.position.x, cubeBody.position.y, cubeBody.position.z)
+                        cubeMesh.position.set(
+                            cubeBody.position.x,
+                            cubeBody.position.y,
+                            cubeBody.position.z
+                        )
                         cubeMesh.quaternion.set(
                             cubeBody.quaternion.x,
                             cubeBody.quaternion.y,
@@ -109,7 +152,7 @@ function initializeEntity(entity) {
                         entity.shape.halfLength * 2,
                         16,
                     )
-                    const cylinderMesh = new THREE.Mesh(cylinderGeometry, normalMaterial)
+                    const cylinderMesh = new THREE.Mesh(cylinderGeometry, material)
                     cylinderMesh.position.x = entity.position.x
                     cylinderMesh.position.y = entity.position.y
                     cylinderMesh.position.z = entity.position.z
@@ -152,7 +195,7 @@ function initializeEntity(entity) {
                     break
                 case 'Ballance$SphereShape':
                     const sphereGeometry = new THREE.SphereGeometry(entity.shape.radius)
-                    const sphereMesh = new THREE.Mesh(sphereGeometry, normalMaterial)
+                    const sphereMesh = new THREE.Mesh(sphereGeometry, material)
                     sphereMesh.position.x = entity.position.x
                     sphereMesh.position.y = entity.position.y
                     sphereMesh.position.z = entity.position.z
@@ -198,6 +241,7 @@ for (let i = 0; i < worldConfig.entities.length; i++) {
 }
 
 const cannonDebugRenderer = new CannonDebugRenderer(scene, world)
+const controls = new FirstPersonControls(camera, canvas)
 
 let time = Date.now()
 const tick = () => {
@@ -205,6 +249,7 @@ const tick = () => {
     const deltaTime = (currentTime - time) * 0.001
     time = currentTime
 
+    controls.update(deltaTime* 10)
     world.step(Math.min(deltaTime, 0.1))
     cannonDebugRenderer.update()
     for (let i = 0; i < updaters.length; i++) updaters[i]()
