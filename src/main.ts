@@ -243,6 +243,35 @@ for (let i = 0; i < worldConfig.entities.length; i++) {
 const cannonDebugRenderer = new CannonDebugRenderer(scene, world)
 const controls = new FirstPersonControls(camera, canvas)
 
+let yaw: number = 0.0
+let pitch: number = 0.25
+
+document.addEventListener("keydown", onDocumentKeyDown, false)
+document.addEventListener("keyup", onDocumentKeyUp, false)
+const pressedKeys = new Set()
+function onDocumentKeyDown(event) {
+    console.log(event.which)
+}
+function onDocumentKeyUp(event) {
+    console.log(event.which)
+}
+
+canvas.addEventListener("click", () => {
+    canvas.requestPointerLock();
+})
+
+const pitchLimit = Math.PI * 0.45
+document.addEventListener("mousemove", (event) => {
+    yaw += event.movementX * 0.01
+    pitch -= event.movementY * 0.01
+    if (pitch > pitchLimit) {
+        pitch = pitchLimit
+    }
+    if (pitch < -pitchLimit) {
+        pitch = -pitchLimit
+    }
+})
+
 let time = Date.now()
 const tick = () => {
     const currentTime = Date.now()
@@ -253,6 +282,21 @@ const tick = () => {
     world.step(Math.min(deltaTime, 0.1))
     cannonDebugRenderer.update()
     for (let i = 0; i < updaters.length; i++) updaters[i]()
+
+    if (player != null) {
+        let offset = new THREE.Vector3(5, 0, 0)
+        offset.applyAxisAngle(new THREE.Vector3(0, 0, 1), pitch)
+        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
+        camera.position.x = player.position.x + offset.x
+        camera.position.y = player.position.y + offset.y
+        camera.position.z = player.position.z + offset.z
+        camera.lookAt(new THREE.Vector3(
+            player.position.x,
+            player.position.y,
+            player.position.z,
+        ))
+        player.applyForce(new CANNON.Vec3(0, 0, 0))
+    }
 
     renderer.render(scene, camera)
     window.requestAnimationFrame(tick)
@@ -267,5 +311,4 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix()
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    console.log(sizes)
 })
