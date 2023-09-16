@@ -250,10 +250,10 @@ document.addEventListener("keydown", onDocumentKeyDown, false)
 document.addEventListener("keyup", onDocumentKeyUp, false)
 const pressedKeys = new Set()
 function onDocumentKeyDown(event) {
-    console.log(event.which)
+    alert(event.key)
 }
 function onDocumentKeyUp(event) {
-    console.log(event.which)
+    console.log(event.key)
 }
 
 canvas.addEventListener("click", () => {
