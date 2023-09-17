@@ -1,14 +1,12 @@
 import './style.css'
-import worldConfig from './world.json'
 
 import * as THREE from 'three'
 import * as dat from 'lil-gui'
+import $ from 'jquery'
 
 import * as CANNON from 'cannon-es'
 import CannonUtils from './cannonUtils'
 import CannonDebugRenderer from './cannonDebugRenderer'
-
-import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 
 // config: different maps, arbitrary 3d shapes
 // ball, box, cylinder
@@ -56,6 +54,112 @@ const updaters: (() => void)[] = []
 
 var player: CANNON.Body | null = null
 
+function createDisplayOnlyMesh(entity, material) {
+    switch (entity.shape.type) {
+        case 'Ballance$BoxShape':
+            const cubeGeometry = new THREE.BoxGeometry(
+                entity.shape.halfExtents.x * 2,
+                entity.shape.halfExtents.y * 2,
+                entity.shape.halfExtents.z * 2,
+            )
+            const cubeMesh = new THREE.Mesh(cubeGeometry, material)
+            cubeMesh.position.x = entity.position.x
+            cubeMesh.position.y = entity.position.y
+            cubeMesh.position.z = entity.position.z
+            cubeMesh.rotation.x = entity.eulerRotation.x
+            cubeMesh.rotation.y = entity.eulerRotation.y
+            cubeMesh.rotation.z = entity.eulerRotation.z
+            cubeMesh.castShadow = true
+            scene.add(cubeMesh)
+
+            const cubeShape = new CANNON.Box(new CANNON.Vec3(
+                entity.shape.halfExtents.x,
+                entity.shape.halfExtents.y,
+                entity.shape.halfExtents.z,
+            ))
+            const cubeBody = new CANNON.Body({ isTrigger: true })
+            cubeBody.addShape(cubeShape)
+            cubeBody.position.x = cubeMesh.position.x
+            cubeBody.position.y = cubeMesh.position.y
+            cubeBody.position.z = cubeMesh.position.z
+            cubeBody.quaternion.set(
+                cubeMesh.quaternion.x,
+                cubeMesh.quaternion.y,
+                cubeMesh.quaternion.z,
+                cubeMesh.quaternion.w,
+            )
+            world.addBody(cubeBody)
+            return cubeBody
+
+        case 'Ballance$CylinderShape':
+            const cylinderGeometry = new THREE.CylinderGeometry(
+                entity.shape.radius,
+                entity.shape.radius,
+                entity.shape.halfLength * 2,
+                16,
+            )
+            const cylinderMesh = new THREE.Mesh(cylinderGeometry, material)
+            cylinderMesh.position.x = entity.position.x
+            cylinderMesh.position.y = entity.position.y
+            cylinderMesh.position.z = entity.position.z
+            cylinderMesh.rotation.x = entity.eulerRotation.x
+            cylinderMesh.rotation.y = entity.eulerRotation.y
+            cylinderMesh.rotation.z = entity.eulerRotation.z
+            cylinderMesh.castShadow = true
+            scene.add(cylinderMesh)
+
+            const cylinderShape = new CANNON.Cylinder(
+                entity.shape.radius,
+                entity.shape.radius,
+                entity.shape.halfLength * 2,
+                16,
+            )
+            const cylinderBody = new CANNON.Body({ isTrigger: true })
+            cylinderBody.addShape(cylinderShape, new CANNON.Vec3())
+            cylinderBody.position.x = cylinderMesh.position.x
+            cylinderBody.position.y = cylinderMesh.position.y
+            cylinderBody.position.z = cylinderMesh.position.z
+            cylinderBody.quaternion.set(
+                cylinderMesh.quaternion.x,
+                cylinderMesh.quaternion.y,
+                cylinderMesh.quaternion.z,
+                cylinderMesh.quaternion.w,
+            )
+            world.addBody(cylinderBody)
+            return cylinderBody
+
+        case 'Ballance$SphereShape':
+            const sphereGeometry = new THREE.SphereGeometry(entity.shape.radius)
+            const sphereMesh = new THREE.Mesh(sphereGeometry, material)
+            sphereMesh.position.x = entity.position.x
+            sphereMesh.position.y = entity.position.y
+            sphereMesh.position.z = entity.position.z
+            sphereMesh.rotation.x = entity.eulerRotation.x
+            sphereMesh.rotation.y = entity.eulerRotation.y
+            sphereMesh.rotation.z = entity.eulerRotation.z
+            sphereMesh.castShadow = true
+            scene.add(sphereMesh)
+
+            const sphereShape = new CANNON.Sphere(entity.shape.radius)
+            const sphereBody = new CANNON.Body({ isTrigger: true })
+            sphereBody.addShape(sphereShape)
+            sphereBody.position.x = sphereMesh.position.x
+            sphereBody.position.y = sphereMesh.position.y
+            sphereBody.position.z = sphereMesh.position.z
+            sphereBody.quaternion.set(
+                sphereMesh.quaternion.x,
+                sphereMesh.quaternion.y,
+                sphereMesh.quaternion.z,
+                sphereMesh.quaternion.w,
+            )
+            world.addBody(sphereBody)
+            return sphereBody
+    }
+}
+
+// forces to apply per time unit, as a Map<BodyId, Map<BodyId, Vec3>>
+const forces = {}
+
 function initializeEntity(entity) {
     switch (entity.type) {
         case 'Ballance$PlayerSpawn':
@@ -93,13 +197,13 @@ function initializeEntity(entity) {
         case 'Ballance$WorldObject':
             const mass = entity.behaviour === 'static' ? 0.0 : 1.0
             const color = new THREE.Color(
-                entity.color.x,
-                entity.color.y,
-                entity.color.z,
+                entity.color.r,
+                entity.color.g,
+                entity.color.b,
             )
             const material = new THREE.MeshPhongMaterial({ color })
             material.transparent = true
-            material.opacity = 0.5
+            material.opacity = entity.color.a
             switch (entity.shape.type) {
                 case 'Ballance$BoxShape':
                     const cubeGeometry = new THREE.BoxGeometry(
@@ -235,15 +339,91 @@ function initializeEntity(entity) {
                     break
             }
             break
+        case 'Ballance$ForceZone':
+            {
+                const material = new THREE.MeshStandardMaterial({ color: 0xFF00FF })
+                material.transparent = true
+                material.opacity = 0.5
+                const forceBody = createDisplayOnlyMesh(entity, material)
+                forceBody.addEventListener('collide', (event) => {
+                    forces[event.body.id] = forces[event.body.id] || {}
+                    forces[event.body.id][forceBody.id] = new CANNON.Vec3(
+                        entity.magnitude.x,
+                        entity.magnitude.y,
+                        entity.magnitude.z,
+                    )
+                })
+                world.addEventListener('endContact', (event) => {
+                    if (event.bodyA == forceBody) {
+                        delete forces[event.bodyB.id][forceBody.id]
+                        if (Object.keys(forces[event.bodyB.id]).length == 0) {
+                            delete forces[event.bodyB.id]
+                        }
+                    }
+                    if (event.bodyB == forceBody) {
+                        delete forces[event.bodyA.id][forceBody.id]
+                        if (Object.keys(forces[event.bodyA.id]).length == 0) {
+                            delete forces[event.bodyA.id]
+                        }
+                    }
+                })
+            }
+            break
+        case 'Ballance$WinZone':
+            {
+                const material = new THREE.MeshStandardMaterial({ color: 0xFFFF00 })
+                material.transparent = true
+                material.opacity = 0.5
+                const body = createDisplayOnlyMesh(entity, material)
+                body.addEventListener('collide', (event) => {
+                    if (event.body == player) {
+                       alert('You Win! Please Refresh')
+                    }
+                })
+            }
+            break
+        case 'Ballance$DeathZone':
+            {
+                const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 })
+                material.transparent = true
+                material.opacity = 0.5
+                const body = createDisplayOnlyMesh(entity, material)
+                body.addEventListener('collide', (event) => {
+                    if (event.body == player) {
+                        alert('You Lose! Please Refresh')
+                    }
+                })
+            }
+            break
     }
 }
 
-for (let i = 0; i < worldConfig.entities.length; i++) {
-    initializeEntity(worldConfig.entities[i])
+function initializeLevel(worldConfig) {
+    for (let i = 0; i < worldConfig.entities.length; i++) {
+        initializeEntity(worldConfig.entities[i])
+    }
 }
 
+let jsonPath = 'world.json'
+const hashLocation = window.location.hash
+if (hashLocation.startsWith('#')) {
+    jsonPath = hashLocation.substring(1) + '.json'
+}
+
+$.ajax({
+    url: jsonPath,
+    type: 'GET',
+    dataType: 'json',
+    success: function(data, status) {
+        console.assert(status === 'success')
+        initializeLevel(data)
+    },
+    error: function(_) {
+        window.alert(`please add ${jsonPath} to the server root`)
+    }
+})
+
 const cannonDebugRenderer = new CannonDebugRenderer(scene, world)
-const controls = new FirstPersonControls(camera, canvas)
 
 let yaw: number = 0.0
 let pitch: number = 0.25
@@ -277,13 +457,30 @@ document.addEventListener("mousemove", (event) => {
 let time = Date.now()
 const tick = () => {
     const currentTime = Date.now()
-    const deltaTime = (currentTime - time) * 0.001
+    let deltaTime = (currentTime - time) * 0.001
     time = currentTime
 
-    controls.update(deltaTime* 10)
-    world.step(Math.min(deltaTime, 0.1))
+    deltaTime = Math.min(deltaTime, 0.1)
+    world.step(deltaTime)
     cannonDebugRenderer.update()
+
     for (let i = 0; i < updaters.length; i++) updaters[i]()
+
+    for (let id of Object.keys(forces)) {
+        let forceX = 0.0
+        let forceY = 0.0
+        let forceZ = 0.0
+        for (let zone of Object.keys(forces[id])) {
+            forceX += forces[id][zone].x
+            forceY += forces[id][zone].y
+            forceZ += forces[id][zone].z
+        }
+        world.getBodyById(id).applyForce(new CANNON.Vec3(
+            forceX * deltaTime,
+            forceY * deltaTime,
+            forceZ * deltaTime,
+        ))
+    }
 
     if (player != null) {
         let offset = new THREE.Vector3(-5, 0, 0)
@@ -298,19 +495,19 @@ const tick = () => {
             player.position.z,
         ))
 
-        let forward = new THREE.Vector3(5, 0, 0)
+        let forward = new THREE.Vector3(500, 0, 0)
         forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
         if (pressedKeys.has('w')) {
-            player.applyForce(new CANNON.Vec3(forward.x, 0, forward.z))
+            player.applyForce(new CANNON.Vec3(forward.x * deltaTime, 0, forward.z * deltaTime))
         }
         if (pressedKeys.has('s')) {
-            player.applyForce(new CANNON.Vec3(-forward.x, 0, -forward.z))
+            player.applyForce(new CANNON.Vec3(-forward.x * deltaTime, 0, -forward.z * deltaTime))
         }
         if (pressedKeys.has('a')) {
-            player.applyForce(new CANNON.Vec3(forward.z, 0, -forward.x))
+            player.applyForce(new CANNON.Vec3(forward.z * deltaTime, 0, -forward.x * deltaTime))
         }
         if (pressedKeys.has('d')) {
-            player.applyForce(new CANNON.Vec3(-forward.z, 0, forward.x))
+            player.applyForce(new CANNON.Vec3(-forward.z * deltaTime, 0, forward.x * deltaTime))
         }
     }
 
