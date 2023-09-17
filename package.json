@@ -1,5 +1,5 @@
 {
-  "name": "ballance-ts",
+  "name": "ballance",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/jquery": "^3.5.19",
     "@types/three": "^0.156.0",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "cannon-es": "^0.20.0",
+    "jquery": "^3.5.19",
     "lil-gui": "^0.18.2",
     "three": "^0.156.1"
   }
