@@ -98,6 +98,8 @@ function initializeEntity(entity) {
                 entity.color.z,
             )
             const material = new THREE.MeshPhongMaterial({ color })
+            material.transparent = true
+            material.opacity = 0.5
             switch (entity.shape.type) {
                 case 'Ballance$BoxShape':
                     const cubeGeometry = new THREE.BoxGeometry(
