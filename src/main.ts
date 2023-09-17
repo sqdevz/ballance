@@ -59,7 +59,7 @@ var player: CANNON.Body | null = null
 function initializeEntity(entity) {
     switch (entity.type) {
         case 'Ballance$PlayerSpawn':
-            const radius = 1.0
+            const radius = 0.5 
             const normalMaterial = new THREE.MeshNormalMaterial()
             const sphereGeometry = new THREE.SphereGeometry(radius)
             const sphereMesh = new THREE.Mesh(sphereGeometry, normalMaterial)
@@ -246,14 +246,14 @@ const controls = new FirstPersonControls(camera, canvas)
 let yaw: number = 0.0
 let pitch: number = 0.25
 
-document.addEventListener("keydown", onDocumentKeyDown, false)
-document.addEventListener("keyup", onDocumentKeyUp, false)
+window.addEventListener("keydown", onDocumentKeyDown, false)
+window.addEventListener("keyup", onDocumentKeyUp, false)
 const pressedKeys = new Set()
-function onDocumentKeyDown(event) {
-    alert(event.key)
+function onDocumentKeyDown(event: KeyboardEvent) {
+    pressedKeys.add(event.key)
 }
-function onDocumentKeyUp(event) {
-    console.log(event.key)
+function onDocumentKeyUp(event: KeyboardEvent) {
+    pressedKeys.delete(event.key)
 }
 
 canvas.addEventListener("click", () => {
@@ -262,7 +262,7 @@ canvas.addEventListener("click", () => {
 
 const pitchLimit = Math.PI * 0.45
 document.addEventListener("mousemove", (event) => {
-    yaw += event.movementX * 0.01
+    yaw -= event.movementX * 0.01
     pitch -= event.movementY * 0.01
     if (pitch > pitchLimit) {
         pitch = pitchLimit
@@ -284,7 +284,7 @@ const tick = () => {
     for (let i = 0; i < updaters.length; i++) updaters[i]()
 
     if (player != null) {
-        let offset = new THREE.Vector3(5, 0, 0)
+        let offset = new THREE.Vector3(-5, 0, 0)
         offset.applyAxisAngle(new THREE.Vector3(0, 0, 1), pitch)
         offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
         camera.position.x = player.position.x + offset.x
@@ -295,7 +295,21 @@ const tick = () => {
             player.position.y,
             player.position.z,
         ))
-        player.applyForce(new CANNON.Vec3(0, 0, 0))
+
+        let forward = new THREE.Vector3(5, 0, 0)
+        forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
+        if (pressedKeys.has('w')) {
+            player.applyForce(new CANNON.Vec3(forward.x, forward.y, forward.z))
+        }
+        if (pressedKeys.has('s')) {
+            player.applyForce(new CANNON.Vec3(-forward.x, -forward.y, -forward.z))
+        }
+        if (pressedKeys.has('a')) {
+            player.applyForce(new CANNON.Vec3(-forward.y, forward.x, forward.z))
+        }
+        if (pressedKeys.has('d')) {
+            player.applyForce(new CANNON.Vec3(forward.y, -forward.x, forward.z))
+        }
     }
 
     renderer.render(scene, camera)
