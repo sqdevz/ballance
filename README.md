@@ -9,3 +9,9 @@ npm install
 ```
 npm run dev
 ```
+
+## How to develop
+Install these extensions
+
+* Prettier - Code formatter
+* ESLint
