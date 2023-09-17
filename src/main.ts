@@ -299,16 +299,16 @@ const tick = () => {
         let forward = new THREE.Vector3(5, 0, 0)
         forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
         if (pressedKeys.has('w')) {
-            player.applyForce(new CANNON.Vec3(forward.x, forward.y, forward.z))
+            player.applyForce(new CANNON.Vec3(forward.x, 0, forward.z))
         }
         if (pressedKeys.has('s')) {
-            player.applyForce(new CANNON.Vec3(-forward.x, -forward.y, -forward.z))
+            player.applyForce(new CANNON.Vec3(-forward.x, 0, -forward.z))
         }
         if (pressedKeys.has('a')) {
-            player.applyForce(new CANNON.Vec3(-forward.y, forward.x, forward.z))
+            player.applyForce(new CANNON.Vec3(forward.z, 0, -forward.x))
         }
         if (pressedKeys.has('d')) {
-            player.applyForce(new CANNON.Vec3(forward.y, -forward.x, forward.z))
+            player.applyForce(new CANNON.Vec3(-forward.z, 0, forward.x))
         }
     }
 
