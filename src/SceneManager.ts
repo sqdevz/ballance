@@ -26,13 +26,8 @@ export class SceneManager {
   renderer!: WebGLRenderer
 
   // Lighting
-  ambientLight = new AmbientLight(0xff0000, 0.5)
-  directionalLight = new DirectionalLight(0xff0000, 0.8)
-
-  // Object
-  geometry = new BoxGeometry(1, 1, 1)
-  material = new MeshPhongMaterial({ color: 0xff0000 })
-  mesh = new Mesh(this.geometry, this.material)
+  ambientLight = new AmbientLight(0xffffff, 0.5)
+  directionalLight = new DirectionalLight(0xffffff, 0.8)
 
   // Controls
   yaw: number = 0.0
@@ -47,7 +42,6 @@ export class SceneManager {
     this.defaultCameraSetup()
     this.defaultRenderer(canvas)
     this.lightingSetup()
-    this.objectSetup()
     this.cannonDebugRenderer = new CannonDebugRenderer(this.scene, physicsWorld)
     this.controls = new FirstPersonControls(this.camera, canvas)
   }
@@ -75,13 +69,6 @@ export class SceneManager {
 
     this.scene.add(this.directionalLight)
     this.scene.add(this.ambientLight)
-  }
-
-  objectSetup = () => {
-    this.mesh.position.y = 0.5
-    this.mesh.castShadow = true
-
-    this.scene.add(this.mesh)
   }
 
   defaultRenderer = (canvas: HTMLCanvasElement) => {
