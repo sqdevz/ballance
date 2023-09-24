@@ -1,6 +1,7 @@
 import './style.css'
-
+import io from 'socket.io-client'
 import $ from 'jquery'
+
 
 import { SceneManager } from './SceneManager.ts'
 
@@ -14,6 +15,7 @@ import {
   MeshPhongMaterial,
   MeshStandardMaterial,
   SphereGeometry,
+  Vector3,
 } from 'three'
 
 // config: different maps, arbitrary 3d shapes
@@ -34,7 +36,7 @@ let manager: SceneManager = new SceneManager(canvas, world)
 // HACK: list of update functions
 const updaters: (() => void)[] = []
 
-var player: Body | null = null
+var playerBody: Body | null = null
 
 function createDisplayOnlyMesh(entity, material) {
   switch (entity.shape.type) {
@@ -144,7 +146,7 @@ function createDisplayOnlyMesh(entity, material) {
 // forces to apply per time unit, as a Map<BodyId, Map<BodyId, Vec3>>
 const forces = {}
 
-const initializeEntity = (entity) => {
+const initializeEntity = (entity, physicsBodyId: number | null) => {
   switch (entity.type) {
     case 'Ballance$PlayerSpawn':
       const radius = 0.5
@@ -176,8 +178,13 @@ const initializeEntity = (entity) => {
           sphereBody.quaternion.w,
         )
       })
-      player = sphereBody
+      if (physicsBodyId == null && playerBody == null) {
+        playerBody = sphereBody
+      } else if (physicsBodyId == sphereBody.id) {
+        playerBody = sphereBody
+      }
       break
+
     case 'Ballance$WorldObject':
       const mass = entity.behaviour === 'static' ? 0.0 : 1.0
       const color = new Color(entity.color.r, entity.color.g, entity.color.b)
@@ -233,6 +240,7 @@ const initializeEntity = (entity) => {
             )
           })
           break
+
         case 'Ballance$CylinderShape':
           const cylinderGeometry = new CylinderGeometry(
             entity.shape.radius,
@@ -281,6 +289,7 @@ const initializeEntity = (entity) => {
             )
           })
           break
+
         case 'Ballance$SphereShape':
           const sphereGeometry = new SphereGeometry(entity.shape.radius)
           const sphereMesh = new Mesh(sphereGeometry, material)
@@ -321,6 +330,7 @@ const initializeEntity = (entity) => {
           break
       }
       break
+
     case 'Ballance$ForceZone':
       {
         const material = new MeshStandardMaterial({ color: 0xff00ff })
@@ -351,6 +361,7 @@ const initializeEntity = (entity) => {
         })
       }
       break
+
     case 'Ballance$WinZone':
       {
         const material = new MeshStandardMaterial({ color: 0xffff00 })
@@ -358,12 +369,13 @@ const initializeEntity = (entity) => {
         material.opacity = 0.5
         const body = createDisplayOnlyMesh(entity, material)
         body.addEventListener('collide', (event) => {
-          if (event.body == player) {
-            alert('You Win! Please Refresh')
+          if (event.body == playerBody) {
+            // alert('You Win! Please Refresh')
           }
         })
       }
       break
+
     case 'Ballance$DeathZone':
       {
         const material = new MeshStandardMaterial({ color: 0xff0000 })
@@ -371,8 +383,8 @@ const initializeEntity = (entity) => {
         material.opacity = 0.5
         const body = createDisplayOnlyMesh(entity, material)
         body.addEventListener('collide', (event) => {
-          if (event.body == player) {
-            alert('You Lose! Please Refresh')
+          if (event.body == playerBody) {
+            // alert('You Lose! Please Refresh')
           }
         })
       }
@@ -380,30 +392,61 @@ const initializeEntity = (entity) => {
   }
 }
 
-function initializeLevel(worldConfig) {
-  for (let i = 0; i < worldConfig.entities.length; i++) {
-    initializeEntity(worldConfig.entities[i])
+function initializeLevel(level, physicsBodyId: number | null = null) {
+  playerBody = null
+  for (let i = 0; i < level.entities.length; i++) {
+    initializeEntity(level.entities[i], physicsBodyId)
   }
 }
 
-let jsonPath = 'world.json'
 const hashLocation = window.location.hash
+let socket = null
 if (hashLocation.startsWith('#')) {
-  jsonPath = hashLocation.substring(1) + '.json'
+  let jsonPath = hashLocation.substring(1) + '.json'
+  $.ajax({
+    url: jsonPath,
+    type: 'GET',
+    dataType: 'json',
+    success: function (data, status) {
+      console.assert(status === 'success')
+      initializeLevel(data)
+    },
+    error: function (_) {
+      window.alert(`please add ${jsonPath} to the server root`)
+    },
+  })
+} else {
+  socket = io('ws://localhost:3000')
+  socket.on('connect', () => {
+    socket.emit('ping', new Uint16Array([1,2,3]))
+  });
+  socket.on('pong', data => {
+    console.log('received pong', data)
+  })
+  socket.on('start-game', data => {
+    initializeLevel(data.level, data.physicsBodyId)
+  })
+  socket.on('world-state', data => {
+    const buffer = new Float32Array(data)
+    for (let i = 0; i < world.bodies.length; i++) {
+      const body: Body = world.bodies[i]
+      body.position.x = buffer[i * 13 + 0]
+      body.position.y = buffer[i * 13 + 1]
+      body.position.z = buffer[i * 13 + 2]
+      // body.quaternion.setFromEuler(buffer[i * 13 + 3], buffer[i * 13 + 4], buffer[i * 13 + 5])
+      body.quaternion.x = buffer[i * 13 + 3]
+      body.quaternion.y = buffer[i * 13 + 4]
+      body.quaternion.z = buffer[i * 13 + 5]
+      body.velocity.x = buffer[i * 13 + 6]
+      body.velocity.y = buffer[i * 13 + 7]
+      body.velocity.z = buffer[i * 13 + 8]
+      body.angularVelocity.x = buffer[i * 13 + 9]
+      body.angularVelocity.y = buffer[i * 13 + 10]
+      body.angularVelocity.z = buffer[i * 13 + 11]
+      body.quaternion.w = buffer[i * 13 + 12]
+    }
+  })
 }
-
-$.ajax({
-  url: jsonPath,
-  type: 'GET',
-  dataType: 'json',
-  success: function (data, status) {
-    console.assert(status === 'success')
-    initializeLevel(data)
-  },
-  error: function (_) {
-    window.alert(`please add ${jsonPath} to the server root`)
-  },
-})
 
 window.addEventListener('keydown', onDocumentKeyDown, false)
 window.addEventListener('keyup', onDocumentKeyUp, false)
@@ -435,7 +478,7 @@ const tick = () => {
       forceZ += forces[id][zone].z
     }
     world
-      .getBodyById(id)
+      .getBodyById(parseInt(id))
       .applyForce(
         new Vec3(
           forceX * manager.deltaTime,
@@ -445,8 +488,18 @@ const tick = () => {
       )
   }
 
-  if (player != null) {
-    manager.updatePlayer(player)
+  if (socket != null) {
+    // send camera vector and keys pressed
+    let forward = new Vector3(500, 0, 0)
+    forward.applyAxisAngle(new Vector3(0, 1, 0), manager.yaw)
+
+    let keys = Array.from(manager.pressedKeys)
+    let message = { keys, forwardXZ: [forward.x, forward.z] }
+    socket.emit('input', message)
+  }
+
+  if (playerBody != null) {
+    manager.updatePlayer(playerBody)
   }
   manager.render()
   window.requestAnimationFrame(tick)

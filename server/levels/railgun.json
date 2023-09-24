@@ -1,0 +1,329 @@
+{
+  "entities" : [ {
+    "type" : "Ballance$PlayerSpawn",
+    "position" : {
+      "x" : 0.0,
+      "y" : 1.5,
+      "z" : 2.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 3.0,
+        "y" : 0.5,
+        "z" : 3.0
+      }
+    },
+    "behaviour" : "static",
+    "position" : {
+      "x" : 0.0,
+      "y" : -0.5,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.8999999761581421,
+      "g" : 0.8999999761581421,
+      "b" : 0.8999999761581421,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 5.0,
+        "y" : 0.5,
+        "z" : 0.05
+      }
+    },
+    "behaviour" : "static",
+    "position" : {
+      "x" : 5.0,
+      "y" : 0.5,
+      "z" : -0.55
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.8999999761581421,
+      "g" : 0.8999999761581421,
+      "b" : 0.8999999761581421,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 5.0,
+        "y" : 0.5,
+        "z" : 0.05
+      }
+    },
+    "behaviour" : "static",
+    "position" : {
+      "x" : 5.0,
+      "y" : 0.5,
+      "z" : 0.55
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.8999999761581421,
+      "g" : 0.8999999761581421,
+      "b" : 0.8999999761581421,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 5.0,
+        "y" : 0.05,
+        "z" : 0.5
+      }
+    },
+    "behaviour" : "static",
+    "position" : {
+      "x" : 5.0,
+      "y" : -0.05,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.8999999761581421,
+      "g" : 0.8999999761581421,
+      "b" : 0.8999999761581421,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$SphereShape",
+      "radius" : 0.45
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : -1.2,
+      "y" : 0.5,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 1.0,
+      "g" : 0.0,
+      "b" : 0.0,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$ForceZone",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 5.0,
+        "y" : 0.5,
+        "z" : 0.5
+      }
+    },
+    "magnitude" : {
+      "x" : 10000.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "position" : {
+      "x" : 5.0,
+      "y" : 0.5,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 3.0,
+        "y" : 0.5,
+        "z" : 3.0
+      }
+    },
+    "behaviour" : "static",
+    "position" : {
+      "x" : 40.0,
+      "y" : -5.0,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.8999999761581421,
+      "g" : 0.8999999761581421,
+      "b" : 0.8999999761581421,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 0.4,
+        "y" : 0.4,
+        "z" : 0.4
+      }
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : 40.0,
+      "y" : -4.0,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.0,
+      "g" : 0.699999988079071,
+      "b" : 0.0,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 0.4,
+        "y" : 0.4,
+        "z" : 0.4
+      }
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : 40.0,
+      "y" : -3.0,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.0,
+      "g" : 0.699999988079071,
+      "b" : 0.0,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 0.4,
+        "y" : 0.4,
+        "z" : 0.4
+      }
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : 40.0,
+      "y" : -2.0,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.0,
+      "g" : 0.699999988079071,
+      "b" : 0.0,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 0.4,
+        "y" : 0.4,
+        "z" : 0.4
+      }
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : 40.0,
+      "y" : -1.0,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.0,
+      "g" : 0.699999988079071,
+      "b" : 0.0,
+      "a" : 1.0
+    }
+  }, {
+    "type" : "Ballance$WorldObject",
+    "shape" : {
+      "type" : "Ballance$BoxShape",
+      "halfExtents" : {
+        "x" : 0.4,
+        "y" : 0.4,
+        "z" : 0.4
+      }
+    },
+    "behaviour" : "dynamic",
+    "position" : {
+      "x" : 40.0,
+      "y" : -0.0,
+      "z" : 0.0
+    },
+    "eulerRotation" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "color" : {
+      "r" : 0.0,
+      "g" : 0.699999988079071,
+      "b" : 0.0,
+      "a" : 1.0
+    }
+  } ]
+}
+
