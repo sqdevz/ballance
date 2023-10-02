@@ -1,10 +1,7 @@
 import './style.css'
-import io from 'socket.io-client'
 import $ from 'jquery'
 
-import { SceneManager } from './SceneManager.ts'
-
-import { Body, Sphere, Vec3, World } from 'cannon-es'
+import { Body, Sphere, Vec3 } from 'cannon-es'
 import {
   Color,
   Mesh,
@@ -21,6 +18,9 @@ import {
   SphereObject,
 } from './ObjectAbstract.ts'
 import { setPositionByCopy, setRotationByCopy } from '../common/entity.ts'
+import { manager, world, socket } from './globals.ts'
+
+import { initialiseGlobalListeners } from './windowListeners.ts'
 
 // config: different maps, arbitrary 3d shapes
 // ball, box, cylinder
@@ -28,19 +28,14 @@ import { setPositionByCopy, setRotationByCopy } from '../common/entity.ts'
 // static/dynamic/force/lava
 // D.O.O.R.S
 
-const canvas: HTMLCanvasElement = document.querySelector(
-  'canvas.webgl',
-) as HTMLCanvasElement
-
-const world = new World()
-world.gravity.set(0, -9.82, 0)
-
-let manager: SceneManager = new SceneManager(canvas, world)
-
+const hashLocation = window.location.hash
 // HACK: list of update functions
+// TODO: Move these globals to scene manager
 const updaters: (() => void)[] = []
-
 var playerBody: Body | null = null
+// forces to apply per time unit, as a Map<BodyId, Map<BodyId, Vec3>>
+const forces = {}
+initialiseGlobalListeners()
 
 function createDisplayOnlyMesh(entity: any, material: any) {
   let object: AbstractObject
@@ -62,9 +57,6 @@ function createDisplayOnlyMesh(entity: any, material: any) {
   world.addBody(object.physics_body)
   return object.physics_body
 }
-
-// forces to apply per time unit, as a Map<BodyId, Map<BodyId, Vec3>>
-const forces = {}
 
 const initializeEntity = (entity: any, physicsBodyId: number | null) => {
   switch (entity.type) {
@@ -103,11 +95,9 @@ const initializeEntity = (entity: any, physicsBodyId: number | null) => {
         case 'Ballance$BoxShape':
           object = new BoxObject(entity, material, { mass })
           break
-
         case 'Ballance$CylinderShape':
           object = new CylinderObject(entity, material, { mass })
           break
-
         case 'Ballance$SphereShape':
           object = new SphereObject(entity, material, { mass })
           break
@@ -190,8 +180,6 @@ function initializeLevel(level, physicsBodyId: number | null = null) {
   }
 }
 
-const hashLocation = window.location.hash
-let socket = null
 if (hashLocation.startsWith('#')) {
   let jsonPath = hashLocation.substring(1) + '.json'
   $.ajax({
@@ -207,7 +195,6 @@ if (hashLocation.startsWith('#')) {
     },
   })
 } else {
-  socket = io('ws://localhost:3000')
   socket.on('connect', () => {
     socket.emit('ping', new Uint16Array([1, 2, 3]))
   })
@@ -238,19 +225,6 @@ if (hashLocation.startsWith('#')) {
     }
   })
 }
-
-window.addEventListener('keydown', onDocumentKeyDown, false)
-window.addEventListener('keyup', onDocumentKeyUp, false)
-function onDocumentKeyDown(event: KeyboardEvent) {
-  manager.pressedKeys.add(event.key)
-}
-function onDocumentKeyUp(event: KeyboardEvent) {
-  manager.pressedKeys.delete(event.key)
-}
-
-canvas.addEventListener('click', () => {
-  canvas.requestPointerLock()
-})
 
 document.addEventListener('mousemove', (event) => {
   manager.updateCameraView(event)
@@ -298,7 +272,3 @@ const tick = () => {
 
 tick()
 manager.render()
-
-window.addEventListener('resize', () => {
-  manager.resize()
-})
