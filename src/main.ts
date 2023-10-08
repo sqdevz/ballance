@@ -2,14 +2,11 @@ import './style.css'
 import io from 'socket.io-client'
 import $ from 'jquery'
 
-
 import { SceneManager } from './SceneManager.ts'
 
-import { Body, Box, Cylinder, Sphere, Vec3, World } from 'cannon-es'
+import { Body, Sphere, Vec3, World } from 'cannon-es'
 import {
-  BoxGeometry,
   Color,
-  CylinderGeometry,
   Mesh,
   MeshNormalMaterial,
   MeshPhongMaterial,
@@ -17,6 +14,13 @@ import {
   SphereGeometry,
   Vector3,
 } from 'three'
+import {
+  AbstractObject,
+  BoxObject,
+  CylinderObject,
+  SphereObject,
+} from './ObjectAbstract.ts'
+import { setPositionByCopy, setRotationByCopy } from '../common/entity.ts'
 
 // config: different maps, arbitrary 3d shapes
 // ball, box, cylinder
@@ -38,145 +42,48 @@ const updaters: (() => void)[] = []
 
 var playerBody: Body | null = null
 
-function createDisplayOnlyMesh(entity, material) {
+function createDisplayOnlyMesh(entity: any, material: any) {
+  let object: AbstractObject
   switch (entity.shape.type) {
-    case 'Ballance$BoxShape':
-      const cubeGeometry = new BoxGeometry(
-        entity.shape.halfExtents.x * 2,
-        entity.shape.halfExtents.y * 2,
-        entity.shape.halfExtents.z * 2,
-      )
-      const cubeMesh = new Mesh(cubeGeometry, material)
-      cubeMesh.position.x = entity.position.x
-      cubeMesh.position.y = entity.position.y
-      cubeMesh.position.z = entity.position.z
-      cubeMesh.rotation.x = entity.eulerRotation.x
-      cubeMesh.rotation.y = entity.eulerRotation.y
-      cubeMesh.rotation.z = entity.eulerRotation.z
-      cubeMesh.castShadow = true
-      manager.scene.add(cubeMesh)
-
-      const cubeShape = new Box(
-        new Vec3(
-          entity.shape.halfExtents.x,
-          entity.shape.halfExtents.y,
-          entity.shape.halfExtents.z,
-        ),
-      )
-      const cubeBody = new Body({ isTrigger: true })
-      cubeBody.addShape(cubeShape)
-      cubeBody.position.x = cubeMesh.position.x
-      cubeBody.position.y = cubeMesh.position.y
-      cubeBody.position.z = cubeMesh.position.z
-      cubeBody.quaternion.set(
-        cubeMesh.quaternion.x,
-        cubeMesh.quaternion.y,
-        cubeMesh.quaternion.z,
-        cubeMesh.quaternion.w,
-      )
-      world.addBody(cubeBody)
-      return cubeBody
-
     case 'Ballance$CylinderShape':
-      const cylinderGeometry = new CylinderGeometry(
-        entity.shape.radius,
-        entity.shape.radius,
-        entity.shape.halfLength * 2,
-        16,
-      )
-      const cylinderMesh = new Mesh(cylinderGeometry, material)
-      cylinderMesh.position.x = entity.position.x
-      cylinderMesh.position.y = entity.position.y
-      cylinderMesh.position.z = entity.position.z
-      cylinderMesh.rotation.x = entity.eulerRotation.x
-      cylinderMesh.rotation.y = entity.eulerRotation.y
-      cylinderMesh.rotation.z = entity.eulerRotation.z
-      cylinderMesh.castShadow = true
-      manager.scene.add(cylinderMesh)
-
-      const cylinderShape = new Cylinder(
-        entity.shape.radius,
-        entity.shape.radius,
-        entity.shape.halfLength * 2,
-        16,
-      )
-      const cylinderBody = new Body({ isTrigger: true })
-      cylinderBody.addShape(cylinderShape, new Vec3())
-      cylinderBody.position.x = cylinderMesh.position.x
-      cylinderBody.position.y = cylinderMesh.position.y
-      cylinderBody.position.z = cylinderMesh.position.z
-      cylinderBody.quaternion.set(
-        cylinderMesh.quaternion.x,
-        cylinderMesh.quaternion.y,
-        cylinderMesh.quaternion.z,
-        cylinderMesh.quaternion.w,
-      )
-      world.addBody(cylinderBody)
-      return cylinderBody
-
+      object = new CylinderObject(entity, material)
+      break
     case 'Ballance$SphereShape':
-      const sphereGeometry = new SphereGeometry(entity.shape.radius)
-      const sphereMesh = new Mesh(sphereGeometry, material)
-      sphereMesh.position.x = entity.position.x
-      sphereMesh.position.y = entity.position.y
-      sphereMesh.position.z = entity.position.z
-      sphereMesh.rotation.x = entity.eulerRotation.x
-      sphereMesh.rotation.y = entity.eulerRotation.y
-      sphereMesh.rotation.z = entity.eulerRotation.z
-      sphereMesh.castShadow = true
-      manager.scene.add(sphereMesh)
-
-      const sphereShape = new Sphere(entity.shape.radius)
-      const sphereBody = new Body({ isTrigger: true })
-      sphereBody.addShape(sphereShape)
-      sphereBody.position.x = sphereMesh.position.x
-      sphereBody.position.y = sphereMesh.position.y
-      sphereBody.position.z = sphereMesh.position.z
-      sphereBody.quaternion.set(
-        sphereMesh.quaternion.x,
-        sphereMesh.quaternion.y,
-        sphereMesh.quaternion.z,
-        sphereMesh.quaternion.w,
-      )
-      world.addBody(sphereBody)
-      return sphereBody
+      object = new SphereObject(entity, material)
+      break
+    case 'Ballance$BoxShape':
+      object = new BoxObject(entity, material, { isTrigger: true })
+      break
+    default:
+      console.log('Entity Shape Type is not found')
+      return
   }
+  manager.scene.add(object.mesh)
+  world.addBody(object.physics_body)
+  return object.physics_body
 }
 
 // forces to apply per time unit, as a Map<BodyId, Map<BodyId, Vec3>>
 const forces = {}
 
-const initializeEntity = (entity, physicsBodyId: number | null) => {
+const initializeEntity = (entity: any, physicsBodyId: number | null) => {
   switch (entity.type) {
     case 'Ballance$PlayerSpawn':
       const radius = 0.5
       const normalMaterial = new MeshNormalMaterial()
       const sphereGeometry = new SphereGeometry(radius)
       const sphereMesh = new Mesh(sphereGeometry, normalMaterial)
-      sphereMesh.position.x = entity.position.x
-      sphereMesh.position.y = entity.position.y
-      sphereMesh.position.z = entity.position.z
+      setPositionByCopy(sphereMesh, entity)
       sphereMesh.castShadow = true
       manager.scene.add(sphereMesh)
       const sphereShape = new Sphere(radius)
       const sphereBody = new Body({ mass: 1.0 })
       sphereBody.addShape(sphereShape)
-      sphereBody.position.x = sphereMesh.position.x
-      sphereBody.position.y = sphereMesh.position.y
-      sphereBody.position.z = sphereMesh.position.z
+      setPositionByCopy(sphereBody, sphereMesh)
       world.addBody(sphereBody)
       updaters.push(() => {
-        sphereMesh.position.set(
-          sphereBody.position.x,
-          sphereBody.position.y,
-          sphereBody.position.z,
-        )
-        sphereMesh.quaternion.set(
-          sphereBody.quaternion.x,
-          sphereBody.quaternion.y,
-          sphereBody.quaternion.z,
-          sphereBody.quaternion.w,
-        )
+        setPositionByCopy(sphereMesh, sphereBody)
+        setRotationByCopy(sphereMesh, sphereBody)
       })
       if (physicsBodyId == null && playerBody == null) {
         playerBody = sphereBody
@@ -191,144 +98,28 @@ const initializeEntity = (entity, physicsBodyId: number | null) => {
       const material = new MeshPhongMaterial({ color })
       material.transparent = true
       material.opacity = entity.color.a
+      let object: AbstractObject
       switch (entity.shape.type) {
         case 'Ballance$BoxShape':
-          const cubeGeometry = new BoxGeometry(
-            entity.shape.halfExtents.x * 2,
-            entity.shape.halfExtents.y * 2,
-            entity.shape.halfExtents.z * 2,
-          )
-          const cubeMesh = new Mesh(cubeGeometry, material)
-          cubeMesh.position.x = entity.position.x
-          cubeMesh.position.y = entity.position.y
-          cubeMesh.position.z = entity.position.z
-          cubeMesh.rotation.x = entity.eulerRotation.x
-          cubeMesh.rotation.y = entity.eulerRotation.y
-          cubeMesh.rotation.z = entity.eulerRotation.z
-          cubeMesh.castShadow = true
-          manager.scene.add(cubeMesh)
-          const cubeShape = new Box(
-            new Vec3(
-              entity.shape.halfExtents.x,
-              entity.shape.halfExtents.y,
-              entity.shape.halfExtents.z,
-            ),
-          )
-          const cubeBody = new Body({ mass })
-          cubeBody.addShape(cubeShape)
-          cubeBody.position.x = cubeMesh.position.x
-          cubeBody.position.y = cubeMesh.position.y
-          cubeBody.position.z = cubeMesh.position.z
-          cubeBody.quaternion.set(
-            cubeMesh.quaternion.x,
-            cubeMesh.quaternion.y,
-            cubeMesh.quaternion.z,
-            cubeMesh.quaternion.w,
-          )
-          world.addBody(cubeBody)
-          updaters.push(() => {
-            cubeMesh.position.set(
-              cubeBody.position.x,
-              cubeBody.position.y,
-              cubeBody.position.z,
-            )
-            cubeMesh.quaternion.set(
-              cubeBody.quaternion.x,
-              cubeBody.quaternion.y,
-              cubeBody.quaternion.z,
-              cubeBody.quaternion.w,
-            )
-          })
+          object = new BoxObject(entity, material, { mass })
           break
 
         case 'Ballance$CylinderShape':
-          const cylinderGeometry = new CylinderGeometry(
-            entity.shape.radius,
-            entity.shape.radius,
-            entity.shape.halfLength * 2,
-            16,
-          )
-          const cylinderMesh = new Mesh(cylinderGeometry, material)
-          cylinderMesh.position.x = entity.position.x
-          cylinderMesh.position.y = entity.position.y
-          cylinderMesh.position.z = entity.position.z
-          cylinderMesh.rotation.x = entity.eulerRotation.x
-          cylinderMesh.rotation.y = entity.eulerRotation.y
-          cylinderMesh.rotation.z = entity.eulerRotation.z
-          cylinderMesh.castShadow = true
-          manager.scene.add(cylinderMesh)
-          const cylinderShape = new Cylinder(
-            entity.shape.radius,
-            entity.shape.radius,
-            entity.shape.halfLength * 2,
-            16,
-          )
-          const cylinderBody = new Body({ mass })
-          cylinderBody.addShape(cylinderShape, new Vec3())
-          cylinderBody.position.x = cylinderMesh.position.x
-          cylinderBody.position.y = cylinderMesh.position.y
-          cylinderBody.position.z = cylinderMesh.position.z
-          cylinderBody.quaternion.set(
-            cylinderMesh.quaternion.x,
-            cylinderMesh.quaternion.y,
-            cylinderMesh.quaternion.z,
-            cylinderMesh.quaternion.w,
-          )
-          world.addBody(cylinderBody)
-          updaters.push(() => {
-            cylinderMesh.position.set(
-              cylinderBody.position.x,
-              cylinderBody.position.y,
-              cylinderBody.position.z,
-            )
-            cylinderMesh.quaternion.set(
-              cylinderBody.quaternion.x,
-              cylinderBody.quaternion.y,
-              cylinderBody.quaternion.z,
-              cylinderBody.quaternion.w,
-            )
-          })
+          object = new CylinderObject(entity, material, { mass })
           break
 
         case 'Ballance$SphereShape':
-          const sphereGeometry = new SphereGeometry(entity.shape.radius)
-          const sphereMesh = new Mesh(sphereGeometry, material)
-          sphereMesh.position.x = entity.position.x
-          sphereMesh.position.y = entity.position.y
-          sphereMesh.position.z = entity.position.z
-          sphereMesh.rotation.x = entity.eulerRotation.x
-          sphereMesh.rotation.y = entity.eulerRotation.y
-          sphereMesh.rotation.z = entity.eulerRotation.z
-          sphereMesh.castShadow = true
-          manager.scene.add(sphereMesh)
-          const sphereShape = new Sphere(entity.shape.radius)
-          const sphereBody = new Body({ mass })
-          sphereBody.addShape(sphereShape)
-          sphereBody.position.x = sphereMesh.position.x
-          sphereBody.position.y = sphereMesh.position.y
-          sphereBody.position.z = sphereMesh.position.z
-          sphereBody.quaternion.set(
-            sphereMesh.quaternion.x,
-            sphereMesh.quaternion.y,
-            sphereMesh.quaternion.z,
-            sphereMesh.quaternion.w,
-          )
-          world.addBody(sphereBody)
-          updaters.push(() => {
-            sphereMesh.position.set(
-              sphereBody.position.x,
-              sphereBody.position.y,
-              sphereBody.position.z,
-            )
-            sphereMesh.quaternion.set(
-              sphereBody.quaternion.x,
-              sphereBody.quaternion.y,
-              sphereBody.quaternion.z,
-              sphereBody.quaternion.w,
-            )
-          })
+          object = new SphereObject(entity, material, { mass })
           break
+        default:
+          return
       }
+      manager.scene.add(object.mesh)
+      world.addBody(object.physics_body)
+      updaters.push(() => {
+        setPositionByCopy(object.mesh, object.physics_body)
+        setRotationByCopy(object.mesh, object.physics_body)
+      })
       break
 
     case 'Ballance$ForceZone':
@@ -418,15 +209,15 @@ if (hashLocation.startsWith('#')) {
 } else {
   socket = io('ws://localhost:3000')
   socket.on('connect', () => {
-    socket.emit('ping', new Uint16Array([1,2,3]))
-  });
-  socket.on('pong', data => {
+    socket.emit('ping', new Uint16Array([1, 2, 3]))
+  })
+  socket.on('pong', (data) => {
     console.log('received pong', data)
   })
-  socket.on('start-game', data => {
+  socket.on('start-game', (data) => {
     initializeLevel(data.level, data.physicsBodyId)
   })
-  socket.on('world-state', data => {
+  socket.on('world-state', (data) => {
     const buffer = new Float32Array(data)
     for (let i = 0; i < world.bodies.length; i++) {
       const body: Body = world.bodies[i]
